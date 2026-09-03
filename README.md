@@ -77,7 +77,7 @@ mean anything.
 |---|---|---|---|---|---|
 | l1 chained migration | 46 `read`s of 18K-char node files, fields on top, long dossier below | $0.135 | **$0.023** (−83%) | 46 results, 817K → 54K chars; peak context 331K → 43K tokens | 45/45 both |
 | l2 ledger state | 45 `read`s of records + a 3.7K rules file | $0.216 | **$0.024** (−89%) | 45 results, 826K → 59K | 45/45 both (the first run scored 0/45 — see cons) |
-| f9 documentation research | 9 pages taken whole through `fetch_page`, facts in tables, lists and prose | $0.0080 | $0.0068 (−15%) | 7 pages, 80K → 32K; the model expanded 3 of them | 8/8 answers both |
+| f9 documentation research | 9 pages taken whole through `fetch_page`, facts in tables, lists and prose | $0.0080 | $0.0068 (−15%); with partial expansion **$0.0063** (−21%) | 7 pages, 80K → 32K; the model expanded 3 of them — with `grep` available, all 3 were partial expansions | 8/8 answers both |
 
 **Where it is neutral: long memory sessions (little to condense)**
 
@@ -125,7 +125,7 @@ differences in these two groups are run noise.
 - Condensing what the model needs is worse than not condensing: it costs a step and the full text comes back anyway.
   On s10 the model expanded all 64 condensed reads and the run cost 6% more. Expansion back-off (stop condensing a
   tool after two expansions) limits the damage; it cannot foresee it.
-- Facts inside prose sentences cannot be kept by any rule. What survives condensation is structure: key/value lines,
+- Facts inside prose sentences cannot be kept by any rule; `grep` expansion makes recovering them cheap, not free. What survives condensation is structure: key/value lines,
   headings, tables, lists, error lines with context. On f9 the three remaining expansions were all for facts in
   sentences.
 - Every content type needs its own rules, and each rule was added after a shape that had gone wrong: over-long lines,
