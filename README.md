@@ -73,12 +73,6 @@ npm run build        # lib/ is committed: `dsh plugin add github:…` installs f
 
 The contract tests mount the real stock loop with the request-reconstruction invariant and check: a large data result is condensed before the next step and expanded on demand; code and error results are never touched; the durable log keeps the original and the replacement citing it.
 
-## What was taken from Headroom, and what was not
-
-Taken: the content router; the log compressor (error-first with context, similar-line de-duplication, first and last error kept, an omission marker with level counts); a simplified SmartCrusher for JSON (head/tail items, error items pinned, duplicates dropped, field names in the marker); the search compressor (per-file quota, first and last kept); the diff compressor (headers, changes with two context lines, hunk quota); CCR's reversible-with-retrieval idea (`expand_result`); live-zone compression (only new bytes are ever condensed); and the feedback-hints idea (expansion back-off).
-
-Not taken, deliberately: the AST-level code compressor (a truncated function body makes the model edit wrongly; code is never condensed here), the ML prose/image compressors (they need a model service), effort routing (changing the model's thinking budget per step is not a context technique), verbosity steering (a terseness note in the system prompt changes output independently of folding), and the proxy-side cache aligner (an append-only surface needs none).
-
 ## Origin
 
 Extracted from the in-turn fold of [dsh-slice-agent-loop](https://github.com/TT-Wang/dsh-slice-agent-loop), where it was the one saving that never needed the loop's session tape. Chinese notes: [README.zh.md](README.zh.md).
