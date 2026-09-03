@@ -69,9 +69,13 @@ def generate():
                 if first_err_sec is None:
                     first_err_sec = sec
         if svc == 'db-proxy':
-            for sec, level, msg in events:
-                if level == 'WARN' and first_err_sec - 60 <= sec < first_err_sec:
-                    truth['warns'].append('%s [%s] %s %s' % (_ts_lookup(out, msg), level, svc, msg))
+            # 从实际写出的行算 truth(按行内时间戳),不按消息文本回查——重复的消息会取错行。
+            first_err_line = next(l for l in out if ' [ERROR] ' in l)
+            t_err = _parse(first_err_line)
+            for l in out:
+                if ' [WARN] ' in l and t_err - 60 <= _parse(l) < t_err:
+                    truth['warns'].append(l)
+            truth['warns'] = [l for l in truth['warns'] if out.index(l) < out.index(first_err_line)]
         for code in sorted(counts):
             truth['rows'].append({'service': svc, 'code': code, 'count': counts[code], 'first_seen': first_seen[code]})
         if counts:
@@ -80,11 +84,10 @@ def generate():
     truth['rows'].sort(key=lambda r: (r['service'], r['code']))
     return logs, truth
 
-def _ts_lookup(lines, msg):
-    for l in lines:
-        if l.endswith(msg):
-            return l.split(' [')[0]
-    raise KeyError(msg)
+def _parse(line):
+    ts = line.split(' [')[0]
+    h, m, rest = ts.split(' ')[1].split(':')
+    return int(h) * 3600 + int(m) * 60 + float(rest)
 
 def setup(root):
     os.makedirs(os.path.join(root, 'logs'), exist_ok=True)
