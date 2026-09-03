@@ -16,6 +16,13 @@ oracle (`oracle.py`) that writes the correct answer so the verifier itself can b
 | f7_build_fix | a build over 60 modules prints ~2400 lines (85K chars) per run with 6 planted errors; fix loop run→edit→run; follow-up asks the broken files and the final warning count | build logs (side-effect output) |
 | f8_verbose_tests | 500 tests, pytest.ini forces -vv --tb=long, 12 planted bugs; a run prints ~170K chars; fix to green, then list the initially failing tests | test output (side-effect output) |
 
+| f9_docs_research | a 61-page documentation site reachable only through `fetch_page` (whole page, 5–16K chars); eight facts from tables and lists across ~8 pages, plus a detail that sits in prose | documents fetched whole |
+| f10_db_investigation | a 25K-row SQLite database reachable only through `db_query` (whole result set as JSONL); a refund-spike investigation with aggregates and JSON payload reasons | query results returned whole |
+
+f9/f10 need the two bench tools the runner registers under `--tools full`: `fetch_page(url)` serves `site/` in the workdir
+(HTML → text, headings and table rows kept), `db_query(sql)` runs read-only SQL against `data/*.db` and returns every row as
+JSONL. Neither can be piped through `grep`, which is exactly the tool shape folding exists for.
+
 f1–f6 turned out to be *compute-style*: a capable agent pipes the data through grep/jq/python and never reads it, so nothing is
 condensed and both arms cost the same — useful as a no-harm check, not as a showcase. f7/f8 are *side-effect-style*: the big output
 is the result of a command the agent must run, so it lands in context whatever the agent does next.
