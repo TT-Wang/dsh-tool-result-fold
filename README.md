@@ -6,16 +6,6 @@ In-turn folding of tool results for the [DeepSeek Harness](https://github.com/de
 
 Under a prefix-cached pricing model (DeepSeek: a cache hit costs 1/30 of a miss) an append-only transcript is already the cheapest context for short sessions. What still grows the bill is every large tool result being paid once at miss price and then carried at hit price on every later step. Condensing results **as they enter** removes those bytes without ever rewriting the prefix.
 
-Measured on the same day against the plain stock loop (deepseek-v4-flash):
-
-| scenario | stock loop | stock loop + fold | notes |
-|---|---|---|---|
-| chained migration, 830K chars of tool output (l1) | $0.135 | **$0.023** | 45/45 checks, peak context 43K vs 331K tokens, 46 folds |
-| long-session memory probes (s13) | $0.017 | $0.020 / $0.023 | neutral (little to fold), all probes hold |
-| 10-turn coding loop (s2) | $0.071 | $0.087 | nothing folded on coding loads; difference is run noise (81 vs 68 steps) |
-
-Everything else being equal, the plugin is a net saving wherever results are large (logs, documents, data) and neutral where they are not (source code, grep, short test output are never condensed).
-
 ## How it works
 
 - On every `agent/pre-step` the plugin looks at the tool results that landed since the previous step and condenses them by content type — the routing borrowed from [Headroom](https://github.com/chopratejas/headroom):
