@@ -17,7 +17,7 @@ Under a prefix-cached pricing model (DeepSeek: a cache hit costs 1/30 of a miss)
   - **unified diffs** of 50+ lines keep headers and changes with 2 context lines, at most 10 hunks per file;
   - small results (data below 6000 chars, logs below 512), and results that would not shrink by at least 45%, are left alone.
 - The condensed view shadows the original through a `tool/result` **surface replacement** event that cites the shadowed node — the same mechanism the harness's own compaction pruner uses, and one the session invariant explicitly allows. The original stays in the durable log, the model's context stays append-only, and the loop's request-reconstruction invariant (`request == session.deriveMessages()`) keeps holding.
-- The view's first line names the way back: `expand_result({"turn": t, "step": s, "call": n})` returns the full result verbatim.
+- The view's first line names the way back: `expand_result({"turn": t, "step": s, "call": n})` returns the full result verbatim; add `grep` (a regex, matching lines with two lines of context) or `lines` ("a-b") to get just the part needed at a fraction of the cost.
 - A `<fold>` section in the system prompt tells the model what it is looking at and that a whole-file read costs no more context than its condensed view.
 
 ### Safeguards learned the hard way
@@ -52,6 +52,7 @@ Do not mount it together with a loop that already folds (such as `dsh-slice-agen
 | `enabled` | `true` | `false` registers only `expand_result` |
 | `pinSteps` | 2 | results landing in the first N steps of a turn are not condensed (unless larger than `pinMaxChars`) |
 | `pinMaxChars` | 8000 | a result this large is condensed even in a pinned step (rules/spec files are a few K; a fetched page or a test run is not one) |
+| `spillPreviewMinBytes` | 50000 | with a spill backend mounted, a result this large is stored through `ctx.spillStore` and the model sees the content-routed digest plus the locator (instead of spill-policy's head/tail preview); 0 disables |
 | `backoffAfterExpansions` | 2 | stop condensing a tool's results after this many `expand_result` calls on them (with expansion rate ≥ ½) |
 | `digest.minChars` | 6000 | data results below this are never condensed |
 | `digest.headLines` / `tailLines` | 10 / 4 | lines kept at both ends of a data result |

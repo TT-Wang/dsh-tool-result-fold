@@ -29,10 +29,14 @@ const PEERS = {
   '@deepseek-ai/dsh-session': 'packages/core/session',
   '@deepseek-ai/dsh-tools': 'packages/core/tools',
   '@deepseek-ai/dsh-system-prompt': 'packages/core/system-prompt',
-  // 只有契约测试需要:挂真实的原生 AgentLoop 及其依赖、请求重建不变量。
+  '@deepseek-ai/dsh-spill': 'packages/spill/spill',
+  // 只有契约测试需要:真实的原生 AgentLoop 及其依赖、请求重建不变量、spill 后端与策略。
   '@deepseek-ai/dsh-agent-loop': 'packages/core/agent-loop',
   '@deepseek-ai/dsh-session-projection': 'packages/session/session-projection',
   '@deepseek-ai/dsh-invariants': 'packages/support/invariants',
+  '@deepseek-ai/dsh-spill-local': 'packages/spill/spill-local',
+  '@deepseek-ai/dsh-spill-policy': 'packages/spill/spill-policy',
+  '@deepseek-ai/dsh-output-retention': 'packages/util/output-retention',
 }
 
 /** Older harness snapshots that moved a package keep a fallback path here. */

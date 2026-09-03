@@ -52,6 +52,7 @@ await ctx.plugin(ToolResultFold, {
 | `enabled` | `true` | `false` 时只注册 `expand_result` |
 | `pinSteps` | 2 | 每轮前 N 步落盘的结果不折(超过 `pinMaxChars` 的除外) |
 | `pinMaxChars` | 8000 | 钉住步里也照折的体量(规则/说明文档只有几 K;整页抓取和测试输出不是) |
+| `spillPreviewMinBytes` | 50000 | 挂了 spill 后端时,达到这个体量的结果存进 `ctx.spillStore`,模型看到按内容路由的折叠视图 + 文件定位(而不是 spill-policy 的头尾预览);0 关闭 |
 | `backoffAfterExpansions` | 2 | 某工具的折叠被取回这么多次(取回率 ≥ ½)后不再折它 |
 | `digest.minChars` | 6000 | data 类低于此字符数不折 |
 | `digest.headLines` / `tailLines` | 10 / 4 | data 类头尾各留几行 |
