@@ -51,7 +51,7 @@ Do not mount it together with a loop that already folds (such as `dsh-slice-agen
 |---|---|---|
 | `enabled` | `true` | `false` registers only `expand_result` |
 | `pinSteps` | 2 | results landing in the first N steps of a turn are not condensed (unless larger than `pinMaxChars`) |
-| `pinMaxChars` | 20000 | a result this large is condensed even in a pinned step |
+| `pinMaxChars` | 8000 | a result this large is condensed even in a pinned step (rules/spec files are a few K; a fetched page or a test run is not one) |
 | `backoffAfterExpansions` | 2 | stop condensing a tool's results after this many `expand_result` calls on them (with expansion rate ≥ ½) |
 | `digest.minChars` | 6000 | data results below this are never condensed |
 | `digest.headLines` / `tailLines` | 10 / 4 | lines kept at both ends of a data result |
