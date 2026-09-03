@@ -58,6 +58,7 @@ def setup(root):
     n_cust = c.execute("select count(distinct r.customer_id) from refunds r join customers c on c.id=r.customer_id where c.region=? and r.created_at like '2026-08%'", (region,)).fetchone()[0]
     big = c.execute("select r.id, r.amount from refunds r join customers c on c.id=r.customer_id where c.region=? and r.created_at like '2026-08%' order by r.amount desc, r.id limit 1", (region,)).fetchone()
     con.close()
-    truth = {'region': region, 'august_refund_total': total, 'top_customers': tops, 'customers_with_refunds': n_cust, 'largest_refund_id': big[0], 'largest_refund_amount': big[1], 'rows': {'orders': len(orders), 'refunds': len(refunds), 'events': len(events)}}
+    gbig = c.execute("select r.id, r.amount from refunds r where r.created_at like '2026-08%' order by r.amount desc, r.id limit 1").fetchone()
+    truth = {'region': region, 'august_refund_total': total, 'top_customers': tops, 'customers_with_refunds': n_cust, 'largest_refund_id': big[0], 'largest_refund_amount': big[1], 'largest_global_id': gbig[0], 'largest_global_amount': gbig[1], 'rows': {'orders': len(orders), 'refunds': len(refunds), 'events': len(events)}}
     os.makedirs(os.path.join(root, '.truth'), exist_ok=True); json.dump(truth, open(os.path.join(root, '.truth', 'f10.json'), 'w'), indent=1)
     open(os.path.join(root, 'README.md'), 'w').write('# refund spike investigation\n\nDatabase: data/app.db (SQLite). Tables: customers(id,name,region,segment,created_at), orders(id,customer_id,amount,currency,status,created_at), refunds(id,order_id,customer_id,amount,created_at), events(id,customer_id,kind,created_at,payload JSON text). Use the db_query tool.\n')
