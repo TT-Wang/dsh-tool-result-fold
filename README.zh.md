@@ -50,7 +50,8 @@ await ctx.plugin(ToolResultFold, {
 | 键 | 默认 | 含义 |
 |---|---|---|
 | `enabled` | `true` | `false` 时只注册 `expand_result` |
-| `pinSteps` | 2 | 每轮前 N 步落盘的结果不折 |
+| `pinSteps` | 2 | 每轮前 N 步落盘的结果不折(超过 `pinMaxChars` 的除外) |
+| `pinMaxChars` | 20000 | 钉住步里也照折的体量 |
 | `backoffAfterExpansions` | 2 | 某工具的折叠被取回这么多次(取回率 ≥ ½)后不再折它 |
 | `digest.minChars` | 6000 | data 类低于此字符数不折 |
 | `digest.headLines` / `tailLines` | 10 / 4 | data 类头尾各留几行 |
