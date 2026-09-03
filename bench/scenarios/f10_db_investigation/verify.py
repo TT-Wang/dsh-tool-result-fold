@@ -19,7 +19,10 @@ def verify(root):
     try:
         e = json.load(open(os.path.join(root, 'extra.json')))
         if int(e.get('customers_with_refunds', -1)) != t['customers_with_refunds']: problems.append('customers_with_refunds %s want %s' % (e.get('customers_with_refunds'), t['customers_with_refunds']))
-        if e.get('largest_refund_id') != t['largest_refund_id'] or abs(float(e.get('largest_refund_amount', -1)) - t['largest_refund_amount']) > 0.05: problems.append('largest %s want %s/%s' % (e, t['largest_refund_id'], t['largest_refund_amount']))
+        # 接受两种读法:区域内最大(题意)或全局最大(早期措辞"region-wide"被两臂都读成全局)
+        ok_region = e.get('largest_refund_id') == t['largest_refund_id'] and abs(float(e.get('largest_refund_amount', -1)) - t['largest_refund_amount']) <= 0.05
+        ok_global = 'largest_global_id' in t and e.get('largest_refund_id') == t['largest_global_id'] and abs(float(e.get('largest_refund_amount', -1)) - t['largest_global_amount']) <= 0.05
+        if not (ok_region or ok_global): problems.append('largest %s want %s/%s' % (e, t['largest_refund_id'], t['largest_refund_amount']))
     except Exception: problems.append('extra.json missing/unreadable')
     ok = not problems
     return ok, ('region, total, top-3 with reasons, extras all exact' if ok else '; '.join(problems)[:400])
