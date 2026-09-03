@@ -12,10 +12,18 @@
   - **代码**(按路径或形态)与 **搜索**(grep/glob)结果从不折;
   - **日志 / 构建 / 测试输出** 留每条错误、失败、警告行及前后上下文、栈帧与摘要行,相似行去重;
   - **文档 / 数据** 留头尾行与每条结构行(`key = value`、`key: value`、标题、段标记),同形附录块只留到上限;超过 1500 字符的单行按字符头尾截断;
-  - 小结果,以及折了省不到 45% 的结果,原样放行。
+  - **JSON** 结果(数组、含大数组字段的对象、JSONL)按元素压:15 个保留位里首 30% 尾 15%,像错误的元素必留,相同元素去重,标记写明省略数量与字段名;
+  - **grep/glob** 超过 120 条命中或 10K 字符时每文件最多留 5 条(首末必留),总共 60 条;
+  - **统一 diff** 50 行以上留文件头与改动及两侧 2 行上下文,每文件最多 10 个 hunk;
+  - 小结果(data 低于 6000 字符、日志低于 512),以及折了省不到 45% 的结果,原样放行。
 - 折叠视图通过 `tool/result` **surface 替换事件** 遮蔽原节点,并引用被遮蔽的 seq——这是 harness 自带 compaction pruner 的同一机制,会话不变量明确允许。原文留在日志里,模型的上下文只追加不改写,原生 loop 的请求重建不变量(`request == session.deriveMessages()`)始终成立。
 - 视图首行写明回去的路:`expand_result({"turn": t, "step": s, "call": n})` 逐字返回原文。
 - 系统提示词里加一段 `<fold>`,告诉模型它看到的是什么,以及整读一个文件不比折叠视图多占上下文。
+
+### 两条用失败换来的保护
+
+- **钉住开头几步**(`pinSteps`,默认 2):每轮前几步落盘的结果不折——任务的规则和说明几乎总在开头被读。一次把 3.7K 的规则文件折掉了九条规则,45 个 posting 全写错目录(0/45,原生 loop 45/45);阈值提到 6000 字符并钉住前两步后,同一任务 45/45,成本只有原生的十分之一。
+- **展开退避**(`backoffAfterExpansions`,默认 2):模型对某个工具的折叠视图调了两次 `expand_result` 且取回率过半,本会话就不再折它。一个每个 blob 中段都要看的任务里,模型把 64 次折叠逐一取回,比不折还贵。
 
 两条走不通的路,记在这里:在 `session/event` 回调里追加替换事件(会话禁止重入追加);在 `tools/post-execute` 里替换内容(日志里就只剩折后文本)。
 
@@ -42,12 +50,17 @@ await ctx.plugin(ToolResultFold, {
 | 键 | 默认 | 含义 |
 |---|---|---|
 | `enabled` | `true` | `false` 时只注册 `expand_result` |
-| `digest.minChars` | 1500 | data 类低于此字符数不折 |
+| `pinSteps` | 2 | 每轮前 N 步落盘的结果不折 |
+| `backoffAfterExpansions` | 2 | 某工具的折叠被取回这么多次(取回率 ≥ ½)后不再折它 |
+| `digest.minChars` | 6000 | data 类低于此字符数不折 |
 | `digest.headLines` / `tailLines` | 10 / 4 | data 类头尾各留几行 |
 | `digest.maxKeepRatio` | 0.55 | 折后仍超过原文这个比例就放弃 |
 | `digest.structuredBlockCap` / `structuredBlockMin` | 12 / 3 | 头部区外每个结构块最多/至少留几行 |
 | `digest.logMinChars` / `logMaxErrors` / `logContextLines` | 512 / 10 / 3 | 日志规则 |
 | `digest.maxLineChars` / `lineHeadChars` / `lineTailChars` | 1500 / 700 / 300 | data 类超长单行 |
+| `digest.jsonMinItems` / `jsonKeepItems` | 5 / 15 | JSON 数组:起压的最小元素数、保留数 |
+| `digest.searchMinMatches` / `searchMinChars` / `searchMaxPerFile` / `searchMaxTotal` | 120 / 10000 / 5 / 60 | grep/glob 配额 |
+| `digest.diffMinLines` / `diffContextLines` / `diffMaxHunksPerFile` | 50 / 2 / 10 | 统一 diff |
 
 ## 开发
 
@@ -59,6 +72,12 @@ npm run build        # lib/ 是提交的:`dsh plugin add github:…` 从 git 安
 ```
 
 契约测试挂真实的原生 loop 加请求重建不变量,验证:大的数据结果在下一步前被折叠、可按需展开;代码与错误结果从不动;日志保留原文与引用它的替换事件。
+
+## 从 Headroom 吸收了什么、没吸收什么
+
+吸收了:内容路由;日志压缩(错误优先带上下文、相似行去重、首末错误必留、省略标记带层级计数);SmartCrusher 的简化版(JSON 首尾元素、错误元素必留、去重、标记写字段名);搜索压缩(每文件配额、首末必留);diff 压缩(留头、改动两侧两行、hunk 配额);CCR 的"可逆 + 按需取回"(`expand_result`);只压新字节的 live-zone;feedback hints 的思路(展开退避)。
+
+有意没吸收:AST 级代码压缩(函数体残缺会让模型编错,这里代码从不折)、ML 的文本/图像压缩(要模型服务)、按步调整推理档位(那不是上下文技术)、提示词末尾的"简洁"引导(它独立于折叠改变输出)、代理层的缓存对齐(只追加的上下文不需要)。
 
 ## 来源
 
